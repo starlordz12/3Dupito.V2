@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>3DUpito — Build Manual</title>
+
+<!-- PWA Meta -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FF2D55">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="3DUpito">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --crimson: #FF2D55;
+    --crimson-bright: #FF4466;
+    --crimson-glow: rgba(255,45,85,0.4);
+    --gold: #FFD60A;
+    --cyan: #00E5FF;
+    --green: #00FF88;
+    --purple: #BF5AF2;
+    --orange: #FF9F0A;
+    --bg: #0A0E1A;
+    --bg2: #151A2E;
+    --bg3: #1E2440;
+    --border: #2D3454;
+    --text: #E5E7F0;
+    --text-dim: #8B92B0;
+    --text-bright: #FFFFFF;
+    --mono: 'Share Tech Mono', monospace;
+    --display: 'Bebas Neue', cursive;
+    --body: 'DM Sans', sans-serif;
+    --safe-top: env(safe-area-inset-top);
+    --safe-bottom: env(safe-area-inset-bottom);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-weight: 300;
+    line-height: 1.7;
+    overflow-x: hidden;
+    padding-bottom: calc(var(--safe-bottom) + 20px);
+  }
+
+  /* SCAN LINE — subtle on light bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.01) 3px, rgba(0,0,0,0.01) 4px);
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* GRID BG */
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,45,85,0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* INSTALL BANNER */
+  #install-banner {
+    display: none;
+    position: fixed;
+    bottom: calc(var(--safe-bottom) + 16px);
+    left: 16px;
+    right: 16px;
+    background: var(--bg2);
+    border: 1px solid var(--crimson);
+    padding: 14px 16px;
+    z-index: 999;
+    border-radius: 4px;
+    box-shadow: 0 4px 30px rgba(155,29,32,0.3);
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  #install-banner.show { display: flex; align-items: center; gap: 12px; }
+
+  .install-text {
+    flex: 1;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+    letter-spacing: 1px;
+  }
+
+  .install-text strong { color: var(--crimson-bright); display: block; margin-bottom: 2px; }
+
+  .install-btn {
+    background: var(--crimson);
+    color: white;
+    border: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 8px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    text-transform: uppercase;
+  }
+
+  .install-close {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 4px;
+  }
+
+  /* iOS INSTALL HINT */
+  #ios-hint {
+    display: none;
+    position: fixed;
+    bottom: calc(var(--safe-bottom) + 16px);
+    left: 16px;
+    right: 16px;
+    background: var(--bg2);
+    border: 1px solid var(--gold);
+    padding: 14px 16px;
+    z-index: 999;
+    border-radius: 4px;
+    animation: slideUp 0.3s ease;
+  }
+
+  #ios-hint.show { display: block; }
+
+  .ios-hint-text {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+    letter-spacing: 0.5px;
+    line-height: 1.8;
+  }
+
+  .ios-hint-text strong { color: var(--gold); }
+
+  .ios-close {
+    position: absolute;
+    top: 10px; right: 12px;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 18px;
+    cursor: pointer;
+  }
+
+  /* HEADER */
+  header {
+    padding: calc(var(--safe-top) + 48px) 0 36px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::after {
+    content: '3DU';
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--display);
+    font-size: min(180px, 35vw);
+    background: linear-gradient(135deg, rgba(255,45,85,0.12), rgba(0,229,255,0.10));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    pointer-events: none;
+  }
+
+  .badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    padding: 3px 10px;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    box-shadow: 0 0 20px rgba(255,214,10,0.2);
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(48px, 12vw, 96px);
+    color: var(--text-bright);
+    letter-spacing: 2px;
+    line-height: 0.9;
+    text-shadow: 0 0 30px rgba(255,255,255,0.15);
+  }
+
+  h1 span {
+    background: linear-gradient(135deg, var(--crimson) 0%, var(--orange) 50%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 20px var(--crimson-glow));
+  }
+
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 14px;
+    line-height: 1.8;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky;
+    top: 0;
+    background: rgba(10,14,26,0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+    z-index: 100;
+    padding-top: 0;
+  }
+
+  nav ul {
+    list-style: none;
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  nav ul::-webkit-scrollbar { display: none; }
+
+  nav a {
+    display: block;
+    padding: 13px 16px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-decoration: none;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+
+  nav a:hover, nav a.active {
+    color: var(--cyan);
+    border-bottom-color: var(--cyan);
+    text-shadow: 0 0 12px var(--cyan);
+  }
+
+  /* OFFLINE INDICATOR */
+  #offline-bar {
+    display: none;
+    background: var(--crimson);
+    color: white;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-align: center;
+    padding: 6px;
+    text-transform: uppercase;
+  }
+
+  #offline-bar.show { display: block; }
+
+  /* SECTIONS */
+  section {
+    padding: 48px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--cyan);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    text-shadow: 0 0 10px rgba(0,229,255,0.4);
+  }
+
+  h2 {
+    font-family: var(--display);
+    font-size: clamp(28px, 7vw, 52px);
+    color: var(--text-bright);
+    letter-spacing: 1px;
+    margin-bottom: 28px;
+    line-height: 1;
+  }
+
+  h3 {
+    font-family: var(--display);
+    font-size: 22px;
+    color: var(--text-bright);
+    letter-spacing: 1px;
+    margin: 28px 0 14px;
+  }
+
+  p { margin-bottom: 14px; font-size: 14px; }
+
+  /* SPEC GRID */
+  .spec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+
+  .spec-item {
+    background: var(--bg2);
+    padding: 16px;
+  }
+
+  .spec-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .spec-value {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--gold);
+    font-weight: bold;
+    text-shadow: 0 0 8px rgba(255,214,10,0.3);
+  }
+
+  .spec-unit { font-size: 10px; color: var(--text-dim); margin-left: 2px; }
+
+  /* TABLES */
+  .parts-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+
+  .parts-table th {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--crimson);
+    background: var(--bg2);
+  }
+
+  .parts-table td {
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .parts-table tr:last-child td { border-bottom: none; }
+  .part-name { font-weight: 500; color: var(--text-bright); }
+  .part-spec { font-family: var(--mono); font-size: 11px; color: var(--gold); }
+
+  .qty-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--crimson), var(--orange));
+    color: white;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    min-width: 28px;
+    text-align: center;
+    box-shadow: 0 0 10px var(--crimson-glow);
+    font-weight: bold;
+  }
+
+  .status-ok { display: inline-block; font-family: var(--mono); font-size: 9px; color: var(--green); border: 1px solid var(--green); padding: 2px 6px; letter-spacing: 1px; box-shadow: 0 0 12px rgba(0,255,136,0.25); background: rgba(0,255,136,0.08); }
+  .status-warn { display: inline-block; font-family: var(--mono); font-size: 9px; color: var(--orange); border: 1px solid var(--orange); padding: 2px 6px; letter-spacing: 1px; box-shadow: 0 0 12px rgba(255,159,10,0.25); background: rgba(255,159,10,0.08); }
+
+  /* MOTOR CARDS */
+  .motor-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .motor-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 14px 10px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .motor-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--crimson), var(--orange), var(--gold));
+    box-shadow: 0 0 12px var(--crimson-glow);
+  }
+
+  .motor-card-num { font-family: var(--display); font-size: 30px; background: linear-gradient(135deg, var(--crimson), var(--orange)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; margin-bottom: 2px; opacity: 0.5; }
+  .motor-card-label { font-family: var(--mono); font-size: 9px; color: var(--text-dim); letter-spacing: 1px; }
+  .motor-card-active { font-family: var(--mono); font-size: 9px; color: var(--green); margin-top: 4px; text-shadow: 0 0 8px rgba(0,255,136,0.5); }
+  .motor-card-spare { font-family: var(--mono); font-size: 9px; color: var(--text-dim); margin-top: 4px; }
+
+  /* WIRING */
+  .wiring-container {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .wiring-container svg {
+    display: block;
+    margin: 0 auto;
+    min-width: 580px;
+  }
+
+  /* CHANNEL GRID */
+  .channel-grid {
+    display: grid;
+    grid-template-columns: 48px 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+    font-size: 13px;
+  }
+
+  .ch-header {
+    background: var(--bg3);
+    padding: 9px 12px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--crimson);
+  }
+
+  .ch-cell { background: var(--bg2); padding: 11px 12px; }
+  .ch-num { font-family: var(--display); font-size: 26px; color: var(--cyan); line-height: 1; text-shadow: 0 0 10px rgba(0,229,255,0.5); }
+
+  /* CALLOUTS */
+  .callout {
+    border-left: 3px solid var(--crimson);
+    background: rgba(255,45,85,0.08);
+    padding: 14px 16px;
+    margin: 20px 0;
+    font-size: 13px;
+    box-shadow: inset 0 0 30px rgba(255,45,85,0.05);
+  }
+
+  .callout.warn { border-color: var(--orange); background: rgba(255,159,10,0.08); box-shadow: inset 0 0 30px rgba(255,159,10,0.05); }
+  .callout.ok { border-color: var(--green); background: rgba(0,255,136,0.08); box-shadow: inset 0 0 30px rgba(0,255,136,0.05); }
+
+  .callout-title {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--crimson);
+    margin-bottom: 5px;
+    text-shadow: 0 0 8px var(--crimson-glow);
+  }
+
+  .callout.warn .callout-title { color: var(--orange); text-shadow: 0 0 8px rgba(255,159,10,0.4); }
+  .callout.ok .callout-title { color: var(--green); text-shadow: 0 0 8px rgba(0,255,136,0.4); }
+
+  /* TUNING BARS */
+  .tuning-item { margin-bottom: 18px; }
+
+  .tuning-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+
+  .tuning-label { font-family: var(--mono); font-size: 11px; color: var(--text-bright); letter-spacing: 1px; }
+  .tuning-value { font-family: var(--mono); font-size: 11px; color: var(--cyan); text-shadow: 0 0 8px rgba(0,229,255,0.4); }
+
+  .tuning-bar-bg { height: 4px; background: var(--border); border-radius: 2px; }
+
+  .tuning-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--crimson), var(--orange), var(--gold), var(--cyan));
+    position: relative;
+    transition: width 1s ease;
+    border-radius: 2px;
+    box-shadow: 0 0 10px rgba(0,229,255,0.5);
+  }
+
+  .tuning-bar-fill::after {
+    content: '';
+    position: absolute;
+    right: 0; top: -4px;
+    width: 2px; height: 12px;
+    background: var(--cyan);
+    box-shadow: 0 0 12px var(--cyan);
+  }
+
+  /* CHECKLIST */
+  .checklist { list-style: none; margin-bottom: 24px; }
+
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .checklist li:last-child { border-bottom: none; }
+
+  .check-box {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    border: 2px solid var(--cyan);
+    flex-shrink: 0;
+    margin-top: 1px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s;
+    -webkit-user-select: none;
+    user-select: none;
+    background: var(--bg2);
+    border-radius: 4px;
+  }
+
+  .check-box.checked {
+    background: var(--green);
+    border-color: var(--green);
+    box-shadow: 0 0 16px rgba(0,255,136,0.6);
+  }
+
+  .check-box.checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--bg);
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .check-text { flex: 1; }
+  .check-text strong { color: var(--text-bright); display: block; }
+  .check-text span { font-size: 11px; color: var(--text-dim); font-family: var(--mono); line-height: 1.5; }
+
+  /* PROGRESS RING */
+  .checklist-progress {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--cyan);
+    padding: 14px 16px;
+    box-shadow: 0 0 24px rgba(0,229,255,0.08);
+  }
+
+  .progress-ring { position: relative; width: 52px; height: 52px; flex-shrink: 0; }
+
+  .progress-ring svg { transform: rotate(-90deg); }
+
+  .progress-ring-track { fill: none; stroke: var(--border); stroke-width: 4; }
+  .progress-ring-fill { fill: none; stroke: var(--cyan); stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 0.4s ease; filter: drop-shadow(0 0 6px var(--cyan)); }
+
+  .progress-count {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--cyan);
+    text-shadow: 0 0 8px rgba(0,229,255,0.5);
+    font-weight: bold;
+  }
+
+  .progress-label { font-family: var(--mono); font-size: 11px; color: var(--text-dim); letter-spacing: 1px; }
+  .progress-label strong { color: var(--text-bright); display: block; font-size: 13px; letter-spacing: 0; }
+
+  /* BUTTONS */
+  .btn {
+    background: none;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 10px 18px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    -webkit-appearance: none;
+    box-shadow: 0 0 12px rgba(0,229,255,0.15);
+  }
+
+  .btn:active { background: var(--cyan); color: var(--bg); box-shadow: 0 0 24px rgba(0,229,255,0.5); }
+
+  /* FOOTER */
+  footer {
+    padding: 36px 0 calc(36px + var(--safe-bottom));
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+  }
+
+  footer span {
+    background: linear-gradient(135deg, var(--crimson), var(--orange), var(--gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  section { animation: fadeInUp 0.4s ease both; }
+
+  /* RESPONSIVE */
+  @media (max-width: 500px) {
+    .motor-cards { grid-template-columns: repeat(2, 1fr); }
+    .channel-grid { grid-template-columns: 40px 1fr; }
+    .ch-cell:nth-child(3n), .ch-header:nth-child(3) { display: none; }
+    .parts-table th:last-child, .parts-table td:last-child { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<!-- OFFLINE BAR -->
+<div id="offline-bar">⚡ OFFLINE MODE — CACHED DATA</div>
+
+<!-- INSTALL BANNER (Android/Desktop) -->
+<div id="install-banner">
+  <div class="install-text">
+    <strong>INSTALL APP</strong>
+    Add 3DUpito to your home screen
+  </div>
+  <button class="install-btn" id="install-btn">Install</button>
+  <button class="install-close" id="install-close">×</button>
+</div>
+
+<!-- iOS INSTALL HINT -->
+<div id="ios-hint">
+  <button class="ios-close" id="ios-close">×</button>
+  <div class="ios-hint-text">
+    <strong style="display:block; margin-bottom:6px; letter-spacing:1px;">📲 INSTALL ON IPHONE</strong>
+    Tap the <strong>Share button</strong> (box with arrow) in Safari,<br>
+    then tap <strong>"Add to Home Screen"</strong><br>
+    The app works offline once installed.
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="container">
+    <div class="badge">BUILD DOCUMENT REV 1.0</div>
+    <h1>3D<span>UPITO</span></h1>
+    <p style="font-size:14px; color:var(--text-dim); margin-top:10px;">MantaDynamics Manta V1 — Bambu Labs PLA-CF Red</p>
+    <div class="subtitle">AOS 2807 1400KV · Spektrum Avian 45A<br>AR631T+ · AS3X + SAFE · 6S</div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <div class="container" style="padding:0 20px;">
+    <ul>
+      <li><a href="#specs">Specs</a></li>
+      <li><a href="#parts">Parts</a></li>
+      <li><a href="#wiring">Wiring</a></li>
+      <li><a href="#channels">Channels</a></li>
+      <li><a href="#as3x">AS3X+SAFE</a></li>
+      <li><a href="#tuning">Tuning</a></li>
+      <li><a href="#preflight">Pre-Flight</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- SPECS -->
+<section id="specs">
+  <div class="container">
+    <div class="section-label">// 01 — AIRCRAFT DATA</div>
+    <h2>Specifications</h2>
+    <div class="spec-grid">
+      <div class="spec-item"><div class="spec-label">Wingspan</div><div class="spec-value">784<span class="spec-unit">mm</span></div></div>
+      <div class="spec-item"><div class="spec-label">Length</div><div class="spec-value">442<span class="spec-unit">mm</span></div></div>
+      <div class="spec-item"><div class="spec-label">Wing Area</div><div class="spec-value">11<span class="spec-unit">dm²</span></div></div>
+      <div class="spec-item"><div class="spec-label">CG Position</div><div class="spec-value">10<span class="spec-unit">mm LE</span></div></div>
+      <div class="spec-item"><div class="spec-label">Est. AUW</div><div class="spec-value">~1,130<span class="spec-unit">g</span></div></div>
+      <div class="spec-item"><div class="spec-label">Cruise Speed</div><div class="spec-value">50<span class="spec-unit">km/h</span></div></div>
+      <div class="spec-item"><div class="spec-label">Max Speed</div><div class="spec-value">~130<span class="spec-unit">km/h</span></div></div>
+      <div class="spec-item"><div class="spec-label">Wing Loading</div><div class="spec-value">72<span class="spec-unit">g/dm²</span></div></div>
+      <div class="spec-item"><div class="spec-label">Airfoil</div><div class="spec-value" style="font-size:12px;">MOD MH61</div></div>
+      <div class="spec-item"><div class="spec-label">Config</div><div class="spec-value" style="font-size:11px;">PUSHER FW</div></div>
+      <div class="spec-item"><div class="spec-label">Material</div><div class="spec-value" style="font-size:12px;">PLA-CF</div></div>
+      <div class="spec-item"><div class="spec-label">System</div><div class="spec-value">6S<span class="spec-unit">LiPo</span></div></div>
+    </div>
+    <div class="callout warn">
+      <div class="callout-title">⚠ Weight Note</div>
+      Printed 3 walls / 3 top-bottom vs spec 1/2. Estimated print weight ~690g vs 360g spec. Total AUW ~1,100–1,150g. Thrust-to-weight still favorable on 6S + 2807.
+    </div>
+  </div>
+</section>
+
+<!-- PARTS -->
+<section id="parts">
+  <div class="container">
+    <div class="section-label">// 02 — BILL OF MATERIALS</div>
+    <h2>Parts List</h2>
+
+    <h3>Power System</h3>
+    <table class="parts-table">
+      <thead><tr><th>Component</th><th>Specification</th><th>Qty</th></tr></thead>
+      <tbody>
+        <tr><td class="part-name">AOS Supernova 2807</td><td class="part-spec">1400KV · 4-6S · 960W · 47g</td><td><span class="qty-badge">4</span></td></tr>
+        <tr><td class="part-name">Spektrum Avian 45A</td><td class="part-spec">45A · 4-6S · BEC 5V · Telemetry</td><td><span class="qty-badge">1</span></td></tr>
+        <tr><td class="part-name">6S LiPo Battery</td><td class="part-spec">1300–2200mAh · XT60 · TBD</td><td><span class="qty-badge">TBD</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Motor Inventory</h3>
+    <div class="motor-cards">
+      <div class="motor-card"><div class="motor-card-num">01</div><div class="motor-card-label">AOS 2807</div><div class="motor-card-active">● INSTALLED</div></div>
+      <div class="motor-card"><div class="motor-card-num">02</div><div class="motor-card-label">AOS 2807</div><div class="motor-card-spare">○ SPARE</div></div>
+      <div class="motor-card"><div class="motor-card-num">03</div><div class="motor-card-label">AOS 2807</div><div class="motor-card-spare">○ SPARE</div></div>
+      <div class="motor-card"><div class="motor-card-num">04</div><div class="motor-card-label">AOS 2807</div><div class="motor-card-spare">○ SPARE</div></div>
+    </div>
+
+    <h3>Radio System</h3>
+    <table class="parts-table">
+      <thead><tr><th>Component</th><th>Specification</th><th>Qty</th></tr></thead>
+      <tbody>
+        <tr><td class="part-name">Spektrum AR631T+</td><td class="part-spec">6-Ch · AS3X · SAFE · DSMX</td><td><span class="qty-badge">1</span></td></tr>
+        <tr><td class="part-name">Spektrum Transmitter</td><td class="part-spec">DSMX · Delta/FW Mix Required</td><td><span class="qty-badge">1</span></td></tr>
+        <tr><td class="part-name">9g Servo — Left Elevon</td><td class="part-spec">9g · Standard PWM · CH3</td><td><span class="qty-badge">1</span></td></tr>
+        <tr><td class="part-name">9g Servo — Right Elevon</td><td class="part-spec">9g · Standard PWM · CH2</td><td><span class="qty-badge">1</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Propellers</h3>
+    <table class="parts-table">
+      <thead><tr><th>Model</th><th>Specification</th><th>Sets</th></tr></thead>
+      <tbody>
+        <tr><td class="part-name">DAL Cyclone T5040C</td><td class="part-spec">5" · 4.0P · Tri-blade · <span class="status-ok">PRIMARY</span></td><td><span class="qty-badge">4×4</span></td></tr>
+        <tr><td class="part-name">DAL Cyclone T5045C</td><td class="part-spec">5" · 4.5P · Tri-blade · <span class="status-warn">STEP-UP</span></td><td><span class="qty-badge">1×4</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Connectors</h3>
+    <table class="parts-table">
+      <thead><tr><th>Connector</th><th>Application</th></tr></thead>
+      <tbody>
+        <tr><td class="part-name">Bullet Connectors (3.5mm)</td><td class="part-spec">Motor Phase A/B/C → ESC Output</td></tr>
+        <tr><td class="part-name">XT60</td><td class="part-spec">Battery (+) → ESC Main Power Input</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- WIRING -->
+<section id="wiring">
+  <div class="container">
+    <div class="section-label">// 03 — WIRING SCHEMATIC</div>
+    <h2>Wiring Diagram</h2>
+    <p style="font-size:12px; color:var(--text-dim); margin-bottom:16px; font-family:var(--mono);">← SCROLL HORIZONTALLY ON MOBILE →</p>
+
+    <div class="wiring-container">
+      <svg viewBox="0 0 780 460" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:auto;">
+        <defs>
+          <marker id="arrowRed" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#C0392B"/></marker>
+          <marker id="arrowGold" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#C9A84C"/></marker>
+          <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4CAF50"/></marker>
+          <marker id="arrowBlue" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#5B9BD5"/></marker>
+          <marker id="arrowPurple" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#A855F7"/></marker>
+        </defs>
+        <rect width="780" height="460" fill="#141414"/>
+        <g stroke="#1E1E1E" stroke-width="0.5">
+          <line x1="0" y1="115" x2="780" y2="115"/><line x1="0" y1="230" x2="780" y2="230"/>
+          <line x1="0" y1="345" x2="780" y2="345"/><line x1="195" y1="0" x2="195" y2="460"/>
+          <line x1="390" y1="0" x2="390" y2="460"/><line x1="585" y1="0" x2="585" y2="460"/>
+        </g>
+        <!-- BATTERY -->
+        <rect x="30" y="185" width="130" height="90" fill="#1A1A1A" stroke="#C9A84C" stroke-width="1.5" rx="2"/>
+        <rect x="30" y="185" width="130" height="6" fill="#C9A84C" rx="2"/>
+        <text x="95" y="222" text-anchor="middle" fill="#F0F0F0" font-family="'Bebas Neue',cursive" font-size="15" letter-spacing="1">6S LiPo</text>
+        <text x="95" y="240" text-anchor="middle" fill="#777" font-family="'Share Tech Mono',monospace" font-size="9">1300–2200mAh</text>
+        <text x="95" y="254" text-anchor="middle" fill="#C9A84C" font-family="'Share Tech Mono',monospace" font-size="9">XT60 MALE</text>
+        <text x="54" y="200" fill="#C9A84C" font-family="'Share Tech Mono',monospace" font-size="8">BATT</text>
+        <rect x="153" y="218" width="8" height="18" fill="#C9A84C" rx="1"/>
+        <!-- ESC -->
+        <rect x="300" y="160" width="180" height="140" fill="#1A1A1A" stroke="#C0392B" stroke-width="1.5" rx="2"/>
+        <rect x="300" y="160" width="180" height="6" fill="#C0392B" rx="2"/>
+        <text x="390" y="196" text-anchor="middle" fill="#F0F0F0" font-family="'Bebas Neue',cursive" font-size="15" letter-spacing="1">Spektrum Avian</text>
+        <text x="390" y="213" text-anchor="middle" fill="#C0392B" font-family="'Bebas Neue',cursive" font-size="14">45A ESC</text>
+        <text x="390" y="230" text-anchor="middle" fill="#777" font-family="'Share Tech Mono',monospace" font-size="9">4-6S · BEC 5V · Telemetry</text>
+        <rect x="308" y="244" width="52" height="15" fill="#0D0D0D" stroke="#2A2A2A" rx="1"/>
+        <text x="334" y="255" text-anchor="middle" fill="#C9A84C" font-family="'Share Tech Mono',monospace" font-size="8">XT60 IN</text>
+        <rect x="368" y="244" width="42" height="15" fill="#0D0D0D" stroke="#2A2A2A" rx="1"/>
+        <text x="389" y="255" text-anchor="middle" fill="#5B9BD5" font-family="'Share Tech Mono',monospace" font-size="8">SIG OUT</text>
+        <rect x="418" y="244" width="52" height="15" fill="#0D0D0D" stroke="#2A2A2A" rx="1"/>
+        <text x="444" y="255" text-anchor="middle" fill="#4CAF50" font-family="'Share Tech Mono',monospace" font-size="8">MOTOR OUT</text>
+        <text x="308" y="288" fill="#555" font-family="'Share Tech Mono',monospace" font-size="8">ESC</text>
+        <!-- MOTOR -->
+        <rect x="580" y="175" width="160" height="110" fill="#1A1A1A" stroke="#4CAF50" stroke-width="1.5" rx="2"/>
+        <rect x="580" y="175" width="160" height="6" fill="#4CAF50" rx="2"/>
+        <text x="660" y="210" text-anchor="middle" fill="#F0F0F0" font-family="'Bebas Neue',cursive" font-size="13" letter-spacing="1">AOS Supernova</text>
+        <text x="660" y="226" text-anchor="middle" fill="#4CAF50" font-family="'Bebas Neue',cursive" font-size="14">2807 1400KV</text>
+        <text x="660" y="243" text-anchor="middle" fill="#777" font-family="'Share Tech Mono',monospace" font-size="9">47g · 960W · PUSHER</text>
+        <circle cx="622" cy="268" r="5" fill="#888" stroke="#4CAF50" stroke-width="1"/>
+        <circle cx="660" cy="268" r="5" fill="#888" stroke="#4CAF50" stroke-width="1"/>
+        <circle cx="698" cy="268" r="5" fill="#888" stroke="#4CAF50" stroke-width="1"/>
+        <text x="622" y="283" text-anchor="middle" fill="#4CAF50" font-family="'Share Tech Mono',monospace" font-size="7">A</text>
+        <text x="660" y="283" text-anchor="middle" fill="#4CAF50" font-family="'Share Tech Mono',monospace" font-size="7">B</text>
+        <text x="698" y="283" text-anchor="middle" fill="#4CAF50" font-family="'Share Tech Mono',monospace" font-size="7">C</text>
+        <!-- RECEIVER -->
+        <rect x="300" y="50" width="180" height="90" fill="#1A1A1A" stroke="#5B9BD5" stroke-width="1.5" rx="2"/>
+        <rect x="300" y="50" width="180" height="6" fill="#5B9BD5" rx="2"/>
+        <text x="390" y="82" text-anchor="middle" fill="#F0F0F0" font-family="'Bebas Neue',cursive" font-size="13" letter-spacing="1">Spektrum AR631T+</text>
+        <text x="390" y="100" text-anchor="middle" fill="#5B9BD5" font-family="'Share Tech Mono',monospace" font-size="9">AS3X + SAFE · 6-CH · DSMX</text>
+        <text x="390" y="118" text-anchor="middle" fill="#777" font-family="'Share Tech Mono',monospace" font-size="8">Powered via ESC BEC (5V)</text>
+        <text x="310" y="64" fill="#5B9BD5" font-family="'Share Tech Mono',monospace" font-size="8">RX</text>
+        <!-- SERVO LEFT -->
+        <rect x="100" y="48" width="118" height="70" fill="#1A1A1A" stroke="#A855F7" stroke-width="1.5" rx="2"/>
+        <rect x="100" y="48" width="118" height="5" fill="#A855F7" rx="2"/>
+        <text x="159" y="78" text-anchor="middle" fill="#F0F0F0" font-family="'Bebas Neue',cursive" font-size="13">9g Servo</text>
+        <text x="159" y="96" text-anchor="middle" fill="#A855F7" font-family="'Share Tech Mono',monospace" font-size="9">LEFT ELEVON</text>
+        <text x="159" y="110" text-anchor="middle" fill="#777" font-family="'Share Tech Mono',monospace" font-size="8">CH3 · PWM</text>
+        <!-- SERVO RIGHT -->
+        <rect x="100" y="342" width="118" height="70" fill="#1A1A1A" stroke="#A855F7" stroke-width="1.5" rx="2"/>
+        <rect x="100" y="342" width="118" height="5" fill="#A855F7" rx="2"/>
+        <text x="159" y="372" text-anchor="middle" fill="#F0F0F0" font-family="'Bebas Neue',cursive" font-size="13">9g Servo</text>
+        <text x="159" y="390" text-anchor="middle" fill="#A855F7" font-family="'Share Tech Mono',monospace" font-size="9">RIGHT ELEVON</text>
+        <text x="159" y="404" text-anchor="middle" fill="#777" font-family="'Share Tech Mono',monospace" font-size="8">CH2 · PWM</text>
+        <!-- PROP -->
+        <rect x="590" y="362" width="140" height="56" fill="#1A1A1A" stroke="#555" stroke-width="1" rx="2"/>
+        <rect x="590" y="362" width="140" height="4" fill="#555" rx="2"/>
+        <text x="660" y="388" text-anchor="middle" fill="#D4D4D4" font-family="'Bebas Neue',cursive" font-size="13">DAL T5040C</text>
+        <text x="660" y="406" text-anchor="middle" fill="#777" font-family="'Share Tech Mono',monospace" font-size="8">5" · 4.0P · TRI · PUSHER DIR</text>
+        <!-- CONNECTIONS -->
+        <line x1="161" y1="230" x2="300" y2="230" stroke="#C9A84C" stroke-width="2" marker-end="url(#arrowGold)"/>
+        <text x="222" y="222" text-anchor="middle" fill="#C9A84C" font-family="'Share Tech Mono',monospace" font-size="9">XT60</text>
+        <text x="222" y="244" text-anchor="middle" fill="#777" font-family="'Share Tech Mono',monospace" font-size="8">+22.2V / GND</text>
+        <line x1="470" y1="230" x2="580" y2="230" stroke="#4CAF50" stroke-width="2" marker-end="url(#arrowGreen)"/>
+        <text x="525" y="222" text-anchor="middle" fill="#4CAF50" font-family="'Share Tech Mono',monospace" font-size="9">3× BULLET</text>
+        <text x="525" y="244" text-anchor="middle" fill="#777" font-family="'Share Tech Mono',monospace" font-size="8">Phase A · B · C</text>
+        <line x1="390" y1="160" x2="390" y2="140" stroke="#5B9BD5" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+        <text x="418" y="152" fill="#5B9BD5" font-family="'Share Tech Mono',monospace" font-size="8">BEC 5V</text>
+        <line x1="358" y1="160" x2="358" y2="140" stroke="#5B9BD5" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowBlue)"/>
+        <text x="305" y="152" fill="#5B9BD5" font-family="'Share Tech Mono',monospace" font-size="8">CH1 SIG</text>
+        <line x1="300" y1="78" x2="218" y2="78" stroke="#A855F7" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+        <text x="258" y="72" text-anchor="middle" fill="#A855F7" font-family="'Share Tech Mono',monospace" font-size="8">CH3</text>
+        <line x1="328" y1="140" x2="328" y2="377" stroke="#A855F7" stroke-width="1.5" stroke-dasharray="5,3"/>
+        <line x1="328" y1="377" x2="218" y2="377" stroke="#A855F7" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+        <text x="268" y="372" text-anchor="middle" fill="#A855F7" font-family="'Share Tech Mono',monospace" font-size="8">CH2</text>
+        <line x1="660" y1="286" x2="660" y2="362" stroke="#555" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+        <text x="678" y="330" fill="#555" font-family="'Share Tech Mono',monospace" font-size="8">SHAFT</text>
+        <!-- LEGEND -->
+        <rect x="28" y="392" width="234" height="58" fill="#111" stroke="#2A2A2A" rx="2"/>
+        <text x="40" y="408" fill="#555" font-family="'Share Tech Mono',monospace" font-size="9" letter-spacing="2">LEGEND</text>
+        <line x1="40" y1="421" x2="70" y2="421" stroke="#C9A84C" stroke-width="2"/>
+        <text x="76" y="424" fill="#C9A84C" font-family="'Share Tech Mono',monospace" font-size="9">Main Power (XT60)</text>
+        <line x1="40" y1="434" x2="70" y2="434" stroke="#4CAF50" stroke-width="2"/>
+        <text x="76" y="437" fill="#4CAF50" font-family="'Share Tech Mono',monospace" font-size="9">Motor Phase (Bullets)</text>
+        <line x1="40" y1="446" x2="70" y2="446" stroke="#5B9BD5" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <text x="76" y="449" fill="#5B9BD5" font-family="'Share Tech Mono',monospace" font-size="9">Signal / BEC / Servo</text>
+      </svg>
+    </div>
+
+    <div class="callout">
+      <div class="callout-title">⚡ Pusher Motor Direction</div>
+      Before prop install: verify motor spins correct pusher direction. Swap any two bullet phase wires to reverse. Confirm at low throttle — prop should push air rearward. Do this with prop removed.
+    </div>
+    <div class="callout warn">
+      <div class="callout-title">⚠ Bullet Connector Sizing</div>
+      AOS Supernova 2807 typically uses 3.5mm bullets. All three phase connections must be fully seated and heat-shrink insulated. Phase order does not matter for direction — swap any two to reverse spin.
+    </div>
+  </div>
+</section>
+
+<!-- CHANNELS -->
+<section id="channels">
+  <div class="container">
+    <div class="section-label">// 04 — RADIO SETUP</div>
+    <h2>Channel Assignments</h2>
+    <div class="callout ok">
+      <div class="callout-title">✓ TX Setup Required</div>
+      Set wing type to <strong>Delta / Flying Wing</strong> in Spektrum TX. This activates elevon mixing — CH2 and CH3 become combined aileron+elevator outputs. Mix in TX, not in AR631T+.
+    </div>
+    <div class="channel-grid">
+      <div class="ch-header">CH</div><div class="ch-header">Function</div><div class="ch-header">Connected To</div>
+      <div class="ch-cell"><div class="ch-num">1</div></div>
+      <div class="ch-cell"><div style="color:var(--text-bright); font-weight:500;">Throttle</div><div style="font-size:11px; color:var(--text-dim); font-family:var(--mono);">Motor speed control</div></div>
+      <div class="ch-cell"><div class="part-spec">Avian 45A ESC Signal Wire</div></div>
+      <div class="ch-cell"><div class="ch-num">2</div></div>
+      <div class="ch-cell"><div style="color:var(--text-bright); font-weight:500;">Aileron / Right Elevon</div><div style="font-size:11px; color:var(--text-dim); font-family:var(--mono);">Roll + Pitch mixed</div></div>
+      <div class="ch-cell"><div class="part-spec">9g Servo — Right Wing</div></div>
+      <div class="ch-cell"><div class="ch-num">3</div></div>
+      <div class="ch-cell"><div style="color:var(--text-bright); font-weight:500;">Elevator / Left Elevon</div><div style="font-size:11px; color:var(--text-dim); font-family:var(--mono);">Roll + Pitch mixed</div></div>
+      <div class="ch-cell"><div class="part-spec">9g Servo — Left Wing</div></div>
+      <div class="ch-cell"><div class="ch-num">4</div></div>
+      <div class="ch-cell"><div style="color:var(--text-bright); font-weight:500;">Rudder</div><div style="font-size:11px; color:var(--text-dim); font-family:var(--mono);">Unused — flying wing</div></div>
+      <div class="ch-cell"><div class="part-spec" style="color:var(--text-dim);">N/C</div></div>
+      <div class="ch-cell"><div class="ch-num">5</div></div>
+      <div class="ch-cell"><div style="color:var(--text-bright); font-weight:500;">Gear / AS3X Toggle</div><div style="font-size:11px; color:var(--text-dim); font-family:var(--mono);">AS3X on/off</div></div>
+      <div class="ch-cell"><div class="part-spec">Switch → AR631T+ Ch5</div></div>
+      <div class="ch-cell"><div class="ch-num">6</div></div>
+      <div class="ch-cell"><div style="color:var(--text-bright); font-weight:500;">Aux / SAFE Mode</div><div style="font-size:11px; color:var(--text-dim); font-family:var(--mono);">SAFE off / on / panic</div></div>
+      <div class="ch-cell"><div class="part-spec">3-pos switch → AR631T+ Ch6</div></div>
+    </div>
+    <div class="callout warn">
+      <div class="callout-title">⚠ Servo Reversal Check</div>
+      Right stick right = right elevon up + left elevon down. Back stick = both elevons up. Correct reversals in TX per channel — do not reverse in AR631T+.
+    </div>
+  </div>
+</section>
+
+<!-- AS3X + SAFE -->
+<section id="as3x">
+  <div class="container">
+    <div class="section-label">// 05 — STABILIZATION</div>
+    <h2>AS3X + SAFE Setup</h2>
+
+    <h3>AR631T+ Orientation</h3>
+    <p>Mount flat and level inside fuselage, aligned with roll and pitch axes. Use the Spektrum Mobile App to define receiver orientation if not in default position.</p>
+
+    <div class="callout ok">
+      <div class="callout-title">✓ Binding Procedure</div>
+      1. TX off. Insert bind plug into BIND port on AR631T+. Power receiver — LED flashes rapidly. Remove bind plug. Put TX in bind mode. LED goes solid = bound. Power cycle both to confirm.
+    </div>
+
+    <h3>AS3X Starting Gains</h3>
+    <div class="tuning-item">
+      <div class="tuning-header"><span class="tuning-label">ROLL GAIN</span><span class="tuning-value">25%</span></div>
+      <div class="tuning-bar-bg"><div class="tuning-bar-fill" style="width:25%"></div></div>
+    </div>
+    <div class="tuning-item">
+      <div class="tuning-header"><span class="tuning-label">PITCH GAIN</span><span class="tuning-value">30%</span></div>
+      <div class="tuning-bar-bg"><div class="tuning-bar-fill" style="width:30%"></div></div>
+    </div>
+    <div class="tuning-item">
+      <div class="tuning-header"><span class="tuning-label">YAW GAIN</span><span class="tuning-value">20%</span></div>
+      <div class="tuning-bar-bg"><div class="tuning-bar-fill" style="width:20%"></div></div>
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-title">⚠ Oscillation = Reduce Gain</div>
+      If rapid oscillation occurs on any axis, reduce that axis gain 20% at a time. Reverse-swept flying wings can be roll-twitchy. Stay conservative on maiden flights.
+    </div>
+
+    <h3>SAFE Configuration</h3>
+    <table class="parts-table">
+      <thead><tr><th>Parameter</th><th>Setting</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td class="part-name">Bank Angle Limit</td><td class="part-spec">45–55°</td><td>Prevents full roll in SAFE mode</td></tr>
+        <tr><td class="part-name">Pitch Angle Limit</td><td class="part-spec">30–40°</td><td>Up and down combined</td></tr>
+        <tr><td class="part-name">Panic Recovery</td><td class="part-spec">Enabled</td><td>3-pos switch position 3</td></tr>
+        <tr><td class="part-name">Level Calibration</td><td class="part-spec">Flat surface · Props off</td><td>Before every maiden</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <div class="callout-title">ℹ Yaw Authority Note</div>
+      No rudder surface — SAFE yaw correction is limited. Expect some yaw slip in tight turns at low speed. Normal for a flying wing. AS3X yaw gain helps but cannot fully correct.
+    </div>
+  </div>
+</section>
+
+<!-- TUNING -->
+<section id="tuning">
+  <div class="container">
+    <div class="section-label">// 06 — FLIGHT TUNING</div>
+    <h2>Tuning Parameters</h2>
+
+    <h3>Center of Gravity</h3>
+    <div class="spec-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="spec-item"><div class="spec-label">CG Position</div><div class="spec-value">10<span class="spec-unit">mm</span></div></div>
+      <div class="spec-item"><div class="spec-label">Reference</div><div class="spec-value" style="font-size:11px;">LEADING EDGE</div></div>
+      <div class="spec-item"><div class="spec-label">Target</div><div class="spec-value" style="font-size:11px;">LEVEL / NOSE↓</div></div>
+    </div>
+
+    <h3>Elevon Travel</h3>
+    <div class="spec-grid" style="grid-template-columns:repeat(2,1fr);">
+      <div class="spec-item"><div class="spec-label">Upward</div><div class="spec-value">~15<span class="spec-unit">mm</span></div></div>
+      <div class="spec-item"><div class="spec-label">Downward</div><div class="spec-value">~12<span class="spec-unit">mm</span></div></div>
+    </div>
+
+    <div class="callout ok">
+      <div class="callout-title">✓ Initial Elevon Trim</div>
+      Apply 2–3mm upward deflection to both elevons at neutral stick. Required for stable flying wing flight. Adjust in 0.5mm increments based on flight behavior.
+    </div>
+
+    <h3>Power System — Throttle Reference</h3>
+    <table class="parts-table">
+      <thead><tr><th>Condition</th><th>Throttle</th><th>Est. Amps</th></tr></thead>
+      <tbody>
+        <tr><td class="part-name">Cruise (50 km/h)</td><td class="part-spec">15–20%</td><td class="part-spec">~8–12A</td></tr>
+        <tr><td class="part-name">Sport / Climb</td><td class="part-spec">40–60%</td><td class="part-spec">~20–30A</td></tr>
+        <tr><td class="part-name">Full Throttle</td><td class="part-spec">100%</td><td class="part-spec">~40–44A</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Battery Options (6S)</h3>
+    <table class="parts-table">
+      <thead><tr><th>Capacity</th><th>Est. Weight</th><th>Est. Flight Time</th></tr></thead>
+      <tbody>
+        <tr><td class="part-name">1300mAh 6S</td><td class="part-spec">~190–210g</td><td class="part-spec">~6–8 min</td></tr>
+        <tr><td class="part-name">1500mAh 6S <span class="status-ok">REC.</span></td><td class="part-spec">~220–240g</td><td class="part-spec">~8–10 min</td></tr>
+        <tr><td class="part-name">2200mAh 6S</td><td class="part-spec">~320–350g</td><td class="part-spec">~12–15 min</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- PRE-FLIGHT -->
+<section id="preflight">
+  <div class="container">
+    <div class="section-label">// 07 — PRE-FLIGHT</div>
+    <h2>Pre-Flight Checklist</h2>
+
+    <div class="checklist-progress">
+      <div class="progress-ring">
+        <svg width="52" height="52" viewBox="0 0 52 52">
+          <circle class="progress-ring-track" cx="26" cy="26" r="21"/>
+          <circle class="progress-ring-fill" id="progress-circle" cx="26" cy="26" r="21"
+            stroke-dasharray="131.9" stroke-dashoffset="131.9"/>
+        </svg>
+        <div class="progress-count" id="progress-count">0</div>
+      </div>
+      <div class="progress-label">
+        <strong id="progress-text">CHECKLIST READY</strong>
+        Tap each item to mark complete
+      </div>
+    </div>
+
+    <ul class="checklist" id="checklist">
+      <li><div class="check-box" onclick="toggle(this)"></div><div class="check-text"><strong>CG Verified</strong><span>Balance at 10mm from LE — level or slight nose down with battery installed</span></div></li>
+      <li><div class="check-box" onclick="toggle(this)"></div><div class="check-text"><strong>Control Surface Direction Confirmed</strong><span>Right stick right = right elevon up + left down. Back stick = both up</span></div></li>
+      <li><div class="check-box" onclick="toggle(this)"></div><div class="check-text"><strong>Elevon Trim Set</strong><span>2–3mm upward deflection at neutral stick confirmed</span></div></li>
+      <li><div class="check-box" onclick="toggle(this)"></div><div class="check-text"><strong>Motor Direction — Pusher Confirmed</strong><span>Prop pushes air rearward at low throttle. Props OFF during bench test</span></div></li>
+      <li><div class="check-box" onclick="toggle(this)"></div><div class="check-text"><strong>Bullet Connectors Secure</strong><span>All three motor phase wires fully seated and heat-shrink insulated</span></div></li>
+      <li><div class="check-box" onclick="toggle(this)"></div><div class="check-text"><strong>XT60 Battery Connection Secure</strong><span>Fully seated, no tension on wire, battery locked in holder</span></div></li>
+      <li><div class="check-box" onclick="toggle(this)"></div><div class="check-text"><strong>Prop Installed — Correct Pusher Orientation</strong><span>Leading edge of blade faces correct direction for pusher thrust</span></div></li>
+      <li><div class="check-box" onclick="toggle(this)"></div><div class="check-text"><strong>Prop Nut Tight</strong><span>Properly torqued — do not over-tighten on aluminum shaft</span></div></li>
+      <li><div class="check-box" onclick="toggle(this)"></div><div class="check-text"><strong>AR631T+ SAFE Level Calibrated</strong><span>Performed on flat surface with aircraft level and props off</span></div></li>
+      <li><div class="check-box" onclick="toggle(this)"></div><div class="check-text"><strong>Wings Locked — Pin B Secured</strong><span>Both wings clicked to fuselage, no play or rocking</span></div></li>
+      <li><div class="check-box" onclick="toggle(this)"></div><div class="check-text"><strong>Canopy / Hatch Locked</strong><span>Spring latch engaged — cannot open in flight</span></div></li>
+      <li><div class="check-box" onclick="toggle(this)"></div><div class="check-text"><strong>Pushrod Linkages — Zero Slop</strong><span>Servo rod connectors tight, no flex in pushrods under load</span></div></li>
+      <li><div class="check-box" onclick="toggle(this)"></div><div class="check-text"><strong>Range Check</strong><span>Walk 30m from aircraft — verify full control response with TX antenna angled away</span></div></li>
+      <li><div class="check-box" onclick="toggle(this)"></div><div class="check-text"><strong>Battery Voltage Confirmed</strong><span>6S = 25.2V full. Do not fly below 21V (3.5V/cell)</span></div></li>
+      <li><div class="check-box" onclick="toggle(this)"></div><div class="check-text"><strong>Wind Check</strong><span>Maiden under 10 km/h winds recommended. Launch into wind</span></div></li>
+    </ul>
+
+    <button class="btn" onclick="resetChecklist()">RESET CHECKLIST</button>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>3DUPITO BUILD MANUAL · <span>MANTA V1 PLATFORM</span> · REV 1.0</p>
+    <p style="margin-top:6px;">AOS 2807 1400KV · AVIAN 45A · AR631T+ · 6S · DAL T5040C</p>
+  </div>
+</footer>
+
+<script>
+// ── CHECKLIST ──
+const TOTAL = 15;
+const circumference = 2 * Math.PI * 21;
+
+function updateProgress() {
+  const checked = document.querySelectorAll('.check-box.checked').length;
+  const circle = document.getElementById('progress-circle');
+  const count = document.getElementById('progress-count');
+  const text = document.getElementById('progress-text');
+  const offset = circumference - (checked / TOTAL) * circumference;
+  circle.style.strokeDashoffset = offset;
+  count.textContent = checked;
+  if (checked === 0) text.textContent = 'CHECKLIST READY';
+  else if (checked === TOTAL) text.textContent = '✓ READY TO FLY';
+  else text.textContent = `${TOTAL - checked} ITEMS REMAINING`;
+}
+
+function toggle(el) {
+  el.classList.toggle('checked');
+  updateProgress();
+}
+
+function resetChecklist() {
+  document.querySelectorAll('.check-box').forEach(b => b.classList.remove('checked'));
+  updateProgress();
+}
+
+// ── OFFLINE DETECTION ──
+function updateOnline() {
+  const bar = document.getElementById('offline-bar');
+  if (!navigator.onLine) bar.classList.add('show');
+  else bar.classList.remove('show');
+}
+window.addEventListener('online', updateOnline);
+window.addEventListener('offline', updateOnline);
+updateOnline();
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
+// ── PWA INSTALL ──
+let deferredPrompt;
+const installBanner = document.getElementById('install-banner');
+const installBtn = document.getElementById('install-btn');
+const installClose = document.getElementById('install-close');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBanner.classList.add('show');
+});
+
+installBtn.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  installBanner.classList.remove('show');
+});
+
+installClose.addEventListener('click', () => {
+  installBanner.classList.remove('show');
+});
+
+// ── iOS HINT ──
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isInStandaloneMode = window.navigator.standalone;
+const iosHint = document.getElementById('ios-hint');
+const iosClose = document.getElementById('ios-close');
+
+if (isIOS && !isInStandaloneMode && !localStorage.getItem('iosHintDismissed')) {
+  setTimeout(() => iosHint.classList.add('show'), 2000);
+}
+
+iosClose.addEventListener('click', () => {
+  iosHint.classList.remove('show');
+  localStorage.setItem('iosHintDismissed', '1');
+});
+
+// ── ACTIVE NAV ──
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav a');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id);
+      });
+    }
+  });
+}, { threshold: 0.3 });
+
+sections.forEach(s => observer.observe(s));
+
+// ── SMOOTH NAV ──
+navLinks.forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+// Init progress
+updateProgress();
+</script>
+</body>
+</html>
